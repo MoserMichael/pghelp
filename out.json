@@ -1,0 +1,17 @@
+[
+    {
+        "name": "Joe A",
+        "fav_teacher": "Mr. Larson",
+        "fav_topic": "Physics"
+    },
+    {
+        "name": "Peggy L",
+        "fav_teacher": "Mrs. Brown",
+        "fav_topic": "Mathematics"
+    },
+    {
+        "name": "Dan L",
+        "fav_teacher": "Mrs. Johnson",
+        "fav_topic": "Computers"
+    }
+]
