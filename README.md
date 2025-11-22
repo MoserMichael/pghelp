@@ -14,9 +14,11 @@ source .venv/bin/activate
 pip3 install -r requirements.txt
 ```
 
+The [psycopg2](https://pypi.org/project/psycopg2/) postgres client is used here.
+
 ## configuration
 
-The current directory or home directory must have the file: .psqldiff of the following form
+The current directory or home directory must have the file: ```.psqldiff``` for configuring the connect string:
 
 
 ```
@@ -28,7 +30,7 @@ conf=postgresql://<PG_USER>:<PG_PASSWD>>@<PG_HOSTNAME>:<PG_PORT>/<PG_DB>
 
 ## Comparing the structure of two SQL tables
 
-The difference between the columns declared in two sql statements is compared:
+Shows the difference between the columns declared in two sql statements.
 
 Example: for the following two sql tables
 
@@ -92,6 +94,8 @@ COLUMN NAMES THAT APPEAR IN TABLE sh2.aaa ONLY
         column: only_b_3 with type: integer
 
 ```
+
+TODO: compare indexes too.
 
 ## dump the result of an sql query into a json file
 
