@@ -46,6 +46,14 @@ conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
                        dest='table2', 
                        help='table name to compare (can include schema name)')
 
+    parse.add_argument('--common', 
+                       '-s', 
+                       action='store_true',
+                       required=False,
+                       default=False,
+                       dest='show_common', 
+                       help='show common columns')
+
     return parse.parse_args(), parse
 
 from dataclasses import dataclass
@@ -184,7 +192,7 @@ def make_dict(col_type_list):
         ret[col.col_name] = col
     return ret
 
-def compare_it(tbl1, col_type_list1, tbl2, col_type_list2):
+def compare_it(tbl1, col_type_list1, tbl2, col_type_list2, show_common):
     col_dict1 = make_dict(col_type_list1)
     col_dict2 = make_dict(col_type_list2)
 
@@ -203,7 +211,7 @@ def compare_it(tbl1, col_type_list1, tbl2, col_type_list2):
                 del col_dict2[ col.col_name ]
                 del col_dict1[ col.col_name ]
 
-    print_column_diff_report(tbl1, tbl2, cols_with_same_name_and_type, cols_with_same_name_diff_type, col_dict1, col_dict2)
+    print_column_diff_report(tbl1, tbl2, cols_with_same_name_and_type, cols_with_same_name_diff_type, col_dict1, col_dict2, show_common)
 
 def show_columns_with_type_changed(tbl1, tbl2, cols_with_same_name_diff_type):
     if len(cols_with_same_name_diff_type) != 0:
@@ -234,7 +242,14 @@ def show_columns_with_type_changed(tbl1, tbl2, cols_with_same_name_diff_type):
             print(f"{report_common}{report_left}{report_right}")
             print("")
 
-def show_exclusive_cols(tbl_name, col_exclusive):
+def show_cols_common(tbl1, tbls2, cols_with_same_name_and_type):
+    if len(cols_with_same_name_and_type):
+        print(f"COLUMN NAMES THAT APPEAR IN BOTH TABLES WITH IDENTICAL TYPE AND CONSTRAINT")
+        print("")
+        for e in cols_with_same_name_and_type:
+            print(f"\tcolumn: {e[0].col_name} with type: {e[0].col_type}")
+
+def show_cols_exclusive(tbl_name, col_exclusive):
     if len(col_exclusive):
         print(f"COLUMN NAMES THAT APPEAR IN TABLE {tbl_name} ONLY")
         print("")
@@ -243,9 +258,9 @@ def show_exclusive_cols(tbl_name, col_exclusive):
             if e.con_type:
                 constr = f"constraint: {get_constraint_name(e.con_type)}"
             print(f"\tcolumn: {e.col_name} with type: {e.col_type}  {constr}") # appears only in table: {tbl_name}")
-        print("")
+        print("") 
 
-def print_column_diff_report(tbl1, tbl2, cols_with_same_name_and_type,cols_with_same_name_diff_type, col_dict1, col_dict2):   
+def print_column_diff_report(tbl1, tbl2, cols_with_same_name_and_type,cols_with_same_name_diff_type, col_dict1, col_dict2, show_common):   
     if len(col_dict1) == 0 and len(col_dict2) == 0:
         if len(cols_with_same_name_diff_type) == 0:
             print(f"{tbl1} and {tbl2} have identical columns and with identical types")
@@ -253,15 +268,20 @@ def print_column_diff_report(tbl1, tbl2, cols_with_same_name_and_type,cols_with_
     
     show_columns_with_type_changed(tbl1, tbl2, cols_with_same_name_diff_type)
 
-    show_exclusive_cols(tbl1, col_dict1)
-    show_exclusive_cols(tbl2, col_dict2)    
+    show_cols_exclusive(tbl1, col_dict1)
+    show_cols_exclusive(tbl2, col_dict2)    
 
-def diff_tables(conn, tbl1, tbl2):
+    if show_common:
+        show_cols_common(tbl1, tbl2, cols_with_same_name_and_type)
+        
+    
+
+def diff_tables(conn, tbl1, tbl2, show_common):
     print(f"compare tables: {tbl1}, {tbl2}")
     col_type_list1 = get_columns(conn, tbl1)
     col_type_list2 = get_columns(conn, tbl2)
 
-    compare_it(tbl1, col_type_list1, tbl2, col_type_list2)
+    compare_it(tbl1, col_type_list1, tbl2, col_type_list2, show_common)
 
 def main():
     opts, _ = parse_cmd_line()
@@ -269,7 +289,7 @@ def main():
     #print(f"conn_str: {conn_str}") 
     conn = db_connect(conn_str)
 
-    diff_tables(conn, opts.table1, opts.table2)
+    diff_tables(conn, opts.table1, opts.table2, opts.show_common)
 
 
 main()

@@ -95,6 +95,46 @@ COLUMN NAMES THAT APPEAR IN TABLE sh2.aaa ONLY
 
 ```
 
+Addition: If you want to see the columns in both tables with identical name and type:
+
+```bash
+python psqldiff.py  -f sh1.aaa -t sh2.aaa -s
+```
+
+This will give the following output
+
+```
+compare tables: sh1.aaa, sh2.aaa
+COLUMNS WITH IDENTICAL NAMES AND CHANGED TYPES, OR CONSTRAINTS
+
+column: common_1
+        table: sh1.aaa and sh2.aaa of type: character varying(10)
+        table: sh1.aaa of constraint: PRIMARY KEY
+
+
+column: common_ch_type1
+        table: sh1.aaa of type: character varying(10)
+        table: sh2.aaa of type: character varying(30)
+
+
+COLUMN NAMES THAT APPEAR IN TABLE sh1.aaa ONLY
+
+        column: only_a_1 with type: character varying(10)
+        column: only_a_2 with type: boolean
+
+COLUMN NAMES THAT APPEAR IN TABLE sh2.aaa ONLY
+
+        column: only_b_1 with type: character varying(40)
+        column: only_b_2 with type: integer
+        column: only_b_3 with type: integer
+
+COLUMN NAMES THAT APPEAR IN BOTH TABLES WITH IDENTICAL TYPE AND CONSTRAINT
+
+        column: common_2 with type: character varying(20)
+        column: common_3 with type: integer
+
+```
+
 TODO: compare indexes too.
 
 ## dump the result of an sql query into a json file
