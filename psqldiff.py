@@ -239,7 +239,10 @@ def show_columns_with_type_changed(tbl1, tbl2, cols_with_same_name_diff_type):
             else:
                 pass
 
-            print(f"{report_common}{report_left}{report_right}")
+            msg=f"{report_common}{report_left}{report_right}"
+            if len(msg):
+                msg = msg[0:len(msg)-1]
+            print(msg)
             print("")
 
 def show_cols_common(tbl1, tbls2, cols_with_same_name_and_type):
