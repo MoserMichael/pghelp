@@ -196,7 +196,8 @@ options:
   --schema SCHEMA, -s SCHEMA
                         schema name
   --fast, -f            show approximate count of rows (fast, but is not
-                        exact)
+                        exact, falls back to slow count - if no count is
+                        known)
 
 ```
 

@@ -35,7 +35,7 @@ conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
                        required=False,
                        default=False,
                        dest='fast_count', 
-                       help='show approximate count of rows (fast, but is not exact, some unknown counts appear as -1)')
+                       help='show approximate count of rows (fast, but is not exact, falls back to slow count - if no count is known)')
 
     return parse.parse_args(), parse
 
