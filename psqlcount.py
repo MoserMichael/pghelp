@@ -102,14 +102,14 @@ FROM {schema_and_table}
 SELECT c.reltuples AS row_count
 FROM  pg_catalog.pg_class c
 INNER JOIN
-    pg_catalog.gg_namespace n ON n.oid = c.relnamespace
+    pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 LEFT JOIN (
     SELECT 
         conrelid,
         conkey,
         contype
     FROM 
-        pg_catalog.g_constraint
+        pg_catalog.pg_constraint
 ) pk_info ON pk_info.conrelid = c.oid
 WHERE
   n.namespace = '{schema}'
@@ -122,7 +122,7 @@ WHERE
             for row in rows:
                 return int(row['row_count'])
     except Exception as e:
-        err("failed to get row count {e}")
+        err(f"failed to get row count {e}")
     
 def list_schema_tables(conn, schema_name):
 
@@ -141,7 +141,7 @@ WHERE schemaname = '{schema_name}';
                 ret.append(row['tablename'])
             return ret
     except Exception as e:
-        err("failed to list schemas {e}")
+        err(f"failed to list schemas {e}")
     
 
 def count_tables_in_schema(schema_name, fast_version):
