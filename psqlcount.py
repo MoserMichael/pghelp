@@ -8,11 +8,7 @@ from psycopg2.extras import RealDictCursor
 
 def parse_cmd_line():
     usage = '''
-Count number of rows in all tables of a given schema, report the result in sorted form 
-(the default schema is called public)
-
-Warning: this script can take a lot of time...
-
+Count number of rows in all tables of a given schema, report the result in sorted form.
 
 Requires configuration file for db connection string, by default it looks for 
 ./.psqldiff and ~/.psqldiff 
@@ -32,6 +28,15 @@ conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
                        type=str,
                        dest='schema', 
                        help='schema name')
+    
+    parse.add_argument('--fast', 
+                       '-f', 
+                       action='store_true',
+                       required=False,
+                       default=False,
+                       dest='fast_count', 
+                       help='show approximate count of rows (fast, but is not exact)')
+
     return parse.parse_args(), parse
 
 
@@ -81,11 +86,19 @@ def read_conf():
 
     err("wtf error")    
 
-def count_table(conn, schema_and_table):
-    query = f"""
+def count_table(conn, schema_and_table, fast_version):
+
+    if not fast_version:
+        query = f"""
 SELECT count(*) AS row_count
 FROM {schema_and_table}
-"""
+"""    
+    else:
+        query = f"""
+SELECT reltuples::bigint AS row_count
+FROM pg_class 
+WHERE relname = '{schema_and_table}';
+"""    
     try:
         with conn.cursor() as cursor:
             cursor.execute(query)
@@ -95,13 +108,14 @@ FROM {schema_and_table}
     except Exception as e:
         err("failed to get row count {e}")
     
-def list_schema_tables(conn, schema_name):
+def list_schema_tables(conn, schema_name, fast_version):
 
     query = f"""
 SELECT tablename
 FROM pg_catalog.pg_tables
 WHERE schemaname = '{schema_name}';
 """
+                
     try:
         with conn.cursor() as cursor:
             cursor.execute(query)
@@ -114,7 +128,7 @@ WHERE schemaname = '{schema_name}';
         err("failed to list schemas {e}")
     
 
-def count_tables_in_schema(schema_name):
+def count_tables_in_schema(schema_name, fast_version):
     conn_str = read_conf()
     conn = db_connect(conn_str)
 
@@ -123,7 +137,7 @@ def count_tables_in_schema(schema_name):
     list_tbls = []
     for tbl_name in tbl_names:
         full_name=f"{schema_name}.{tbl_name}"
-        cnt = count_table(conn, full_name)
+        cnt = count_table(conn, full_name, fast_version)
         list_tbls.append( (cnt, full_name) )
     
     list_tbls.sort(key=lambda arg: arg[0])
@@ -132,7 +146,7 @@ def count_tables_in_schema(schema_name):
 
 def main():
     arg, _ = parse_cmd_line()
-    count_tables_in_schema(arg.schema)
+    count_tables_in_schema(arg.schema, arg.fast_count)
 
 main()
 

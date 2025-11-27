@@ -184,19 +184,20 @@ will result in the following json data in file ```out.json```
 ## count rows of all tables of a namespace and report tables, sorted by row count
 
 ```
-usage: psqlcount.py [-h] --schema SCHEMA
+usage: psqlcount.py [-h] --schema SCHEMA [--fast]
 
 Count number of rows in all tables of a given schema, report the result in
-sorted form (the default schema is called public) Warning: this script can
-take a lot of time... Requires configuration file for db connection string, by
-default it looks for ./.psqldiff and ~/.psqldiff with the following
-configuration [PSQL]
-conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
+sorted form. Requires configuration file for db connection string, by default
+it looks for ./.psqldiff and ~/.psqldiff with the following configuration
+[PSQL] conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
 
 options:
   -h, --help            show this help message and exit
   --schema SCHEMA, -s SCHEMA
                         schema name
+  --fast, -f            show approximate count of rows (fast, but is not
+                        exact)
+
 ```
 
 
