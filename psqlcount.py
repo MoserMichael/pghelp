@@ -113,7 +113,7 @@ LEFT JOIN (
 ) pk_info ON pk_info.conrelid = c.oid
 WHERE
   n.nspname = '{schema}'
-  AND c.relname = {table}
+  AND c.relname = '{table}'
 """    
     try:
         with conn.cursor() as cursor:
