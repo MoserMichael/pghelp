@@ -35,7 +35,7 @@ conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
                        required=False,
                        default=False,
                        dest='fast_count', 
-                       help='show approximate count of rows (fast, but is not exact)')
+                       help='show approximate count of rows (fast, but is not exact, some unknown counts appear as -1)')
 
     return parse.parse_args(), parse
 
@@ -94,10 +94,26 @@ SELECT count(*) AS row_count
 FROM {schema_and_table}
 """    
     else:
+        pos = schema_and_table.find(".")
+        schema = schema_and_table[0:pos]
+        table = schema_and_table[(pos+1):]
+
         query = f"""
-SELECT reltuples::bigint AS row_count
-FROM pg_class 
-WHERE relname = '{schema_and_table}';
+SELECT c.reltuples AS row_count
+FROM  pg_catalog.pg_class c
+INNER JOIN
+    pg_catalog.gg_namespace n ON n.oid = c.relnamespace
+LEFT JOIN (
+    SELECT 
+        conrelid,
+        conkey,
+        contype
+    FROM 
+        pg_catalog.g_constraint
+) pk_info ON pk_info.conrelid = c.oid
+WHERE
+  n.namespace = '{schema}'
+  AND c.rename = {table}
 """    
     try:
         with conn.cursor() as cursor:
