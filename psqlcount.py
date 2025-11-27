@@ -8,7 +8,11 @@ from psycopg2.extras import RealDictCursor
 
 def parse_cmd_line():
     usage = '''
-Count number of rows in all tables of a given schema, report the result in sorted form
+Count number of rows in all tables of a given schema, report the result in sorted form 
+(the default schema is called public)
+
+Warning: this script can take a lot of time...
+
 
 Requires configuration file for db connection string, by default it looks for 
 ./.psqldiff and ~/.psqldiff 
