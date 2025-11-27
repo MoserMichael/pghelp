@@ -1,0 +1,134 @@
+import argparse
+import sys
+from pathlib import Path
+import configparser
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+
+def parse_cmd_line():
+    usage = '''
+Count number of rows in all tables of a given schema, report the result in sorted form
+
+Requires configuration file for db connection string, by default it looks for 
+./.psqldiff and ~/.psqldiff 
+
+with the following configuration
+
+[PSQL]
+conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
+
+'''
+
+    parse = argparse.ArgumentParser(description=usage)
+
+    parse.add_argument('--schema', 
+                       '-s', 
+                       required=True,
+                       type=str,
+                       dest='schema', 
+                       help='schema name')
+    return parse.parse_args(), parse
+
+
+def err(msg):
+    print(f"Error: {msg}")
+    sys.exit(1)
+
+
+def db_connect(conn_str, read_only=True):
+    conn = psycopg2.connect(conn_str, cursor_factory=RealDictCursor)
+    conn.set_session(readonly=read_only, autocommit=True)
+    return conn
+
+def find_conf(filename):
+    current_dir = Path.cwd()
+    file_path_current = current_dir / filename
+    if file_path_current.exists():
+        return file_path_current
+
+    # Search in home directory
+    home_dir = Path.home()
+    file_path_home = home_dir / filename
+    if file_path_home.exists():
+        return file_path_home
+
+    err(f"'{filename}' not found in current or home directory.")
+
+def read_value(config, fpath, section, option):    
+    if not config.has_section(section):
+        err(f"Not section {section} in {fpath}]")
+    if not config.has_option(section, option):
+        err(f"Not {option} value in section {section} in {fpath}]")
+    return config[section][option]
+
+
+def read_conf():
+    cfg_file = ".psqldiff"
+    fpath = find_conf(cfg_file)
+    config = configparser.ConfigParser()
+
+    # Read the configuration file
+    try:
+        config.read(fpath)
+        return read_value(config, fpath, 'PSQL', 'conf')
+    except Exception as ex:
+        err(f"Can't read configuration file {fpath} error: {ex}")
+
+    err("wtf error")    
+
+def count_table(conn, schema_and_table):
+    query = f"""
+SELECT count(*) AS row_count
+FROM {schema_and_table}
+"""
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            for row in rows:
+                return int(row['row_count'])
+    except Exception as e:
+        err("failed to get row count {e}")
+    
+def list_schema_tables(conn, schema_name):
+
+    query = f"""
+SELECT tablename
+FROM pg_catalog.pg_tables
+WHERE schemaname = '{schema_name}';
+"""
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            ret = []
+            for row in rows:
+                ret.append(row['tablename'])
+            return ret
+    except Exception as e:
+        err("failed to list schemas {e}")
+    
+
+def count_tables_in_schema(schema_name):
+    conn_str = read_conf()
+    conn = db_connect(conn_str)
+
+    tbl_names = list_schema_tables(conn, schema_name)
+
+    list_tbls = []
+    for tbl_name in tbl_names:
+        full_name=f"{schema_name}.{tbl_name}"
+        cnt = count_table(conn, full_name)
+        list_tbls.append( (cnt, full_name) )
+    
+    list_tbls.sort(key=lambda arg: arg[0])
+    for entry in list_tbls:
+        print(f"row_count: {entry[0]} table: {entry[1]}")
+
+def main():
+    arg, _ = parse_cmd_line()
+    count_tables_in_schema(arg.schema)
+
+main()
+
