@@ -112,8 +112,8 @@ LEFT JOIN (
         pg_catalog.pg_constraint
 ) pk_info ON pk_info.conrelid = c.oid
 WHERE
-  n.namespace = '{schema}'
-  AND c.rename = {table}
+  n.nspname = '{schema}'
+  AND c.relname = {table}
 """    
     try:
         with conn.cursor() as cursor:
