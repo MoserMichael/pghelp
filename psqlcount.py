@@ -108,7 +108,7 @@ WHERE relname = '{schema_and_table}';
     except Exception as e:
         err("failed to get row count {e}")
     
-def list_schema_tables(conn, schema_name, fast_version):
+def list_schema_tables(conn, schema_name):
 
     query = f"""
 SELECT tablename
