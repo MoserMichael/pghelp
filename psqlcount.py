@@ -154,6 +154,8 @@ def count_tables_in_schema(schema_name, fast_version):
     for tbl_name in tbl_names:
         full_name=f"{schema_name}.{tbl_name}"
         cnt = count_table(conn, full_name, fast_version)
+        if cnt == -1 and fast_version:
+            cnt = count_table(conn, full_name, False)
         list_tbls.append( (cnt, full_name) )
     
     list_tbls.sort(key=lambda arg: arg[0])
