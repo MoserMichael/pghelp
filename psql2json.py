@@ -21,7 +21,7 @@ conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
 
 '''
 
-    parse = argparse.ArgumentParser(description=usage)
+    parse = argparse.ArgumentParser(description=usage, formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parse.add_argument('--query', 
                        '-q', 
