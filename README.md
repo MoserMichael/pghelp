@@ -1,4 +1,5 @@
 
+# python scripts for working with postgress
 
 ## setup
 
@@ -27,6 +28,33 @@ The current directory or home directory must have the file: ```.psqldiff``` for 
 conf=postgresql://<PG_USER>:<PG_PASSWD>>@<PG_HOSTNAME>:<PG_PORT>/<PG_DB>
 
 ```
+
+## Check if all join clauses are backed by indexes
+
+One reeason why a SELECT statement can have bad performance: the SELECT statement has JOIN clauses, where the columns in the ON clause arenot backed by indexes. This utility checks, if this is the case.
+
+```
+usage: psqljoincheck.py [-h] -i INPUT [-d] [-s]
+
+Check if all join clauses are backed by indexes. 
+
+Requires configuration file for db connection string, by default it looks for 
+./.psqldiff and ~/.psqldiff 
+
+with the following configuration
+
+[PSQL]
+conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
+    
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        input sql file
+  -d, --debug           debug on
+  -s, --show_listing    show listing of sql
+```
+
 
 ## Comparing the structure of two SQL tables
 
