@@ -33,6 +33,8 @@ conf=postgresql://<PG_USER>:<PG_PASSWD>>@<PG_HOSTNAME>:<PG_PORT>/<PG_DB>
 
 One reeason why a SELECT statement can have bad performance: the SELECT statement has JOIN clauses, where the columns in the ON clause arenot backed by indexes. This utility checks, if this is the case.
 
+This utility uses the very remarkable [sqlglot](https://sqlglot.com/sqlglot.html) library, for parsing of sql statements.
+
 ```
 usage: psqljoincheck.py [-h] -i INPUT [-d] [-s]
 
