@@ -1,9 +1,5 @@
 import argparse
-import sys
-from pathlib import Path
-import configparser
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import util as utl
 
 
 # map value of pg_catalog.pg_constraint.contype  
@@ -65,45 +61,6 @@ class ColEntry:
     col_type: str
     con_type: str
 
-def err(msg):
-    print(f"Error: {msg}")
-    sys.exit(1)
-
-def find_conf(filename):
-    current_dir = Path.cwd()
-    file_path_current = current_dir / filename
-    if file_path_current.exists():
-        return file_path_current
-
-    # Search in home directory
-    home_dir = Path.home()
-    file_path_home = home_dir / filename
-    if file_path_home.exists():
-        return file_path_home
-
-    err(f"'{filename}' not found in current or home directory.")
-
-def read_value(config, fpath, section, option):    
-    if not config.has_section(section):
-        err(f"Not section {section} in {fpath}]")
-    if not config.has_option(section, option):
-        err(f"Not {option} value in section {section} in {fpath}]")
-    return config[section][option]
-
-
-def read_conf():
-    cfg_file = ".psqldiff"
-    fpath = find_conf(cfg_file)
-    config = configparser.ConfigParser()
-
-    # Read the configuration file
-    try:
-        config.read(fpath)
-        return read_value(config, fpath, 'PSQL', 'conf')
-    except Exception as ex:
-        err(f"Can't read configuration file {fpath} error: {ex}")
-
-    err("wtf error")    
 
 def get_schema_and_table(dot_name):
     dot_pos = dot_name.find(".")
@@ -178,14 +135,9 @@ ORDER BY
             #print(f"type info for {schema_and_tbl} : {ret}")
             return ret
     except Exception as e:
-        err(f"failed to get field types for {schema_and_tbl} err {e}" )
+        utl.err(f"failed to get field types for {schema_and_tbl} err {e}" )
 
     
-def db_connect(conn_str, read_only=True):
-    conn = psycopg2.connect(conn_str, cursor_factory=RealDictCursor)
-    conn.set_session(readonly=read_only, autocommit=True)
-    return conn
-
 def make_dict(col_type_list):
     ret = {}
     for col in col_type_list:
@@ -288,9 +240,9 @@ def diff_tables(conn, tbl1, tbl2, show_common):
 
 def main():
     opts, _ = parse_cmd_line()
-    conn_str = read_conf()
+    conn_str = utl.read_conf()
     #print(f"conn_str: {conn_str}") 
-    conn = db_connect(conn_str)
+    conn = utl.db_connect(conn_str)
 
     diff_tables(conn, opts.table1, opts.table2, opts.show_common)
 

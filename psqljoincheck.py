@@ -1,79 +1,10 @@
 import argparse
 import pprint
-import sys
-import configparser
-from pathlib import Path
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from dataclasses import dataclass
 from sqlglot import parse_one, exp
+import util as utl
 
 debug_on = False
-
-def err(msg):
-    print(f"Error: {msg}")
-    sys.exit(1)
-
-def find_conf(filename):
-    current_dir = Path.cwd()
-    file_path_current = current_dir / filename
-    if file_path_current.exists():
-        return file_path_current
-
-    # Search in home directory
-    home_dir = Path.home()
-    file_path_home = home_dir / filename
-    if file_path_home.exists():
-        return file_path_home
-
-    err(f"'{filename}' not found in current or home directory.")
-
-def read_value(config, fpath, section, option):    
-    if not config.has_section(section):
-        err(f"Not section {section} in {fpath}]")
-    if not config.has_option(section, option):
-        err(f"Not {option} value in section {section} in {fpath}]")
-    return config[section][option]
-
-
-def read_conf():
-    cfg_file = ".psqldiff"
-    fpath = find_conf(cfg_file)
-    config = configparser.ConfigParser()
-
-    # Read the configuration file
-    try:
-        config.read(fpath)
-        return read_value(config, fpath, 'PSQL', 'conf')
-    except Exception as ex:
-        err(f"Can't read configuration file {fpath} error: {ex}")
-
-    err("wtf error")    
-
-def db_connect(conn_str, read_only=True):
-    conn = psycopg2.connect(conn_str, cursor_factory=RealDictCursor)
-    conn.set_session(readonly=read_only, autocommit=True)
-    return conn
-
-def run_sql(conn, stmt):
-    try:
-        with conn.cursor() as cursor:
-            
-            cursor.execute(stmt)
-            rows = cursor.fetchall()
-
-            ret_rows = []
-            for row in rows:
-                ret_row = {}
-                
-                for column in row.items():
-                    ret_row[column[0]] = column[1]
-
-                ret_rows.append(ret_row)
-            return ret_rows
-    except Exception as e:
-        err(f"failed to run query {stmt}, error: {e}")
-
 
 def parse_join_table(joined_table):
     tokens = joined_table.split(" ")
@@ -148,7 +79,7 @@ GROUP BY
     i.indexrelid, i.indisprimary, i.indisunique;
 """
             
-    rows = run_sql(conn, sql_stm)
+    rows = utl.run_sql(conn, sql_stm)
     
     # make sets out of column sets
     for index_info in rows:
@@ -209,7 +140,7 @@ def get_select_stmt(sql_stmt):
     if isinstance(pexpr, exp.Select):
         return sql_stmt    
     
-    err("Can't handle sql statement (expected SELECT, or bulk INSERT / INSERT SELECT)")
+    utl.err("Can't handle sql statement (expected SELECT, or bulk INSERT / INSERT SELECT)")
 
     
 def do_listing(msg):
@@ -319,8 +250,9 @@ conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
 
 def test_main():
     args = parse_arguments()
-    conn_str = read_conf()
-    conn = db_connect(conn_str)
+    conn_str = utl.read_conf()
+
+    conn = utl.db_connect(conn_str)
     with open(args.input, 'r') as in_file:
         sql_stmt = in_file.read().strip()
         error_messages = []

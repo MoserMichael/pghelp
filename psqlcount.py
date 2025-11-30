@@ -1,10 +1,5 @@
 import argparse
-import sys
-from pathlib import Path
-import configparser
-import psycopg2
-from psycopg2.extras import RealDictCursor
-
+import util as utl
 
 def parse_cmd_line():
     usage = '''
@@ -37,56 +32,23 @@ conn="postgresql://<DBUSER>:<DBPASSWRD>@<HOST>:<PORT>/<DBNAME>"
                        dest='fast_count', 
                        help='show approximate count of rows (fast, but is not exact, falls back to slow count - if no count is known)')
 
+    parse.add_argument('--verbose', 
+                       '-v', 
+                       action='store_true',
+                       required=False,
+                       default=False,
+                       dest='verbose', 
+                       help='show script progress, verbose output')
+
     return parse.parse_args(), parse
 
 
-def err(msg):
-    print(f"Error: {msg}")
-    sys.exit(1)
 
+def count_table(conn, schema_and_table, fast_version, verbose):
 
-def db_connect(conn_str, read_only=True):
-    conn = psycopg2.connect(conn_str, cursor_factory=RealDictCursor)
-    conn.set_session(readonly=read_only, autocommit=True)
-    return conn
+    if verbose:
+        print(f"-> Checking table {schema_and_table}")
 
-def find_conf(filename):
-    current_dir = Path.cwd()
-    file_path_current = current_dir / filename
-    if file_path_current.exists():
-        return file_path_current
-
-    # Search in home directory
-    home_dir = Path.home()
-    file_path_home = home_dir / filename
-    if file_path_home.exists():
-        return file_path_home
-
-    err(f"'{filename}' not found in current or home directory.")
-
-def read_value(config, fpath, section, option):    
-    if not config.has_section(section):
-        err(f"Not section {section} in {fpath}]")
-    if not config.has_option(section, option):
-        err(f"Not {option} value in section {section} in {fpath}]")
-    return config[section][option]
-
-
-def read_conf():
-    cfg_file = ".psqldiff"
-    fpath = find_conf(cfg_file)
-    config = configparser.ConfigParser()
-
-    # Read the configuration file
-    try:
-        config.read(fpath)
-        return read_value(config, fpath, 'PSQL', 'conf')
-    except Exception as ex:
-        err(f"Can't read configuration file {fpath} error: {ex}")
-
-    err("wtf error")    
-
-def count_table(conn, schema_and_table, fast_version):
 
     if not fast_version:
         query = f"""
@@ -116,13 +78,19 @@ WHERE
   AND c.relname = '{table}'
 """    
     try:
+        row_count = 0
         with conn.cursor() as cursor:
             cursor.execute(query)
             rows = cursor.fetchall()
             for row in rows:
-                return int(row['row_count'])
+                row_count = int(row['row_count'])
+                break
+        if verbose:
+            print(f"-> {schema_and_table} has {row_count} rows")
+        return row_count
+
     except Exception as e:
-        err(f"failed to get row count {e}")
+        utl.err(f"failed to get row count {e}")
     
 def list_schema_tables(conn, schema_name):
 
@@ -141,21 +109,28 @@ WHERE schemaname = '{schema_name}';
                 ret.append(row['tablename'])
             return ret
     except Exception as e:
-        err(f"failed to list schemas {e}")
+        utl.err(f"failed to list schemas {e}")
     
 
-def count_tables_in_schema(schema_name, fast_version):
-    conn_str = read_conf()
-    conn = db_connect(conn_str)
+def count_tables_in_schema(schema_name, fast_version, verbose):
+    conn_str = utl.read_conf()
+    if verbose:
+        print(f"connecting... {conn_str}")
+    conn = utl.db_connect(conn_str)
+    if verbose:
+        print("-> connected")
 
     tbl_names = list_schema_tables(conn, schema_name)
+    if verbose:
+        print(f"-> Tables in schema {schema_name} : {','.join(tbl_names)}")
 
     list_tbls = []
     for tbl_name in tbl_names:
         full_name=f"{schema_name}.{tbl_name}"
-        cnt = count_table(conn, full_name, fast_version)
+        cnt = count_table(conn, full_name, fast_version, verbose)
         if cnt == -1 and fast_version:
-            cnt = count_table(conn, full_name, False)
+            cnt = count_table(conn, full_name, False, verbose)
+
         list_tbls.append( (cnt, full_name) )
     
     list_tbls.sort(key=lambda arg: arg[0])
@@ -164,7 +139,7 @@ def count_tables_in_schema(schema_name, fast_version):
 
 def main():
     arg, _ = parse_cmd_line()
-    count_tables_in_schema(arg.schema, arg.fast_count)
+    count_tables_in_schema(arg.schema, arg.fast_count, arg.verbose)
 
 main()
 
