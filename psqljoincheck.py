@@ -51,6 +51,37 @@ def ref_fields_from_joined_table(joined_table, join_condition):
 
     return JoinClause(table_name = table_name, joined_columns=ret)
 
+def get_primary_key_index(conn, tbl_name):
+
+    if debug_on:
+        print(f"find pk on {tbl_name}")
+
+    sql_stm = f"""
+SELECT a.attname AS column_name,
+       pg_get_indexdef(i.indexrelid) AS index_definition_sql
+FROM pg_index i
+JOIN pg_attribute a ON a.attrelid = i.indrelid
+    AND a.attnum = ANY(i.indkey)
+WHERE i.indrelid = '{tbl_name}'::regclass
+    AND i.indisprimary;
+"""
+
+    rows = utl.run_sql(conn, sql_stm)
+    
+    # make sets out of column sets
+    ret_set = set()
+    index_sql = ""
+    for index_info in rows:
+        index_sql = index_info['index_definition_sql']
+        ret_set.add(index_info['column_name'])
+
+    if len(ret_set) == 0:
+        return None, ""
+    if debug_on:
+        print(f"pkinfo: {ret_set} - {index_sql}")
+    return ret_set, index_sql
+
+
 def get_table_indexes(conn, tbl_name):
     pos = tbl_name.find(".")
     schema_name = tbl_name[0:pos]
@@ -85,6 +116,10 @@ GROUP BY
     for index_info in rows:
         index_info['indexed_columns_set'] = set(index_info['indexed_columns'].replace(' ', '').split(","))
 
+    pk_index, index_sql = get_primary_key_index(conn, tbl_name) 
+    if pk_index:
+        rows.append({'indexed_columns_set': pk_index, 'index_definition_sql' : index_sql})
+
     if debug_on:
         print(f"Indexes:\n{pprint.pformat(rows, indent=4)}")
 
@@ -98,7 +133,7 @@ def find_matching_index(index_infos, joined_columns, error_messages):
 
     # check if joined columns occur in any of the indexes.
     for index_info in index_infos:
-        if index_info['indexed_columns_set'] == joined_column_set:
+        if index_info['indexed_columns_set'].issubset(joined_column_set):
             return True, index_info['index_definition_sql']
         
     return False, ""
@@ -171,6 +206,8 @@ def check_joins_for_indexes(conn, sql_stmt, error_messages, show_listing):
         
         # Check if the join source is a Subquery expression
         if isinstance(join_source, exp.Subquery):
+        #res = join.find(exp.Subquery)
+        #if res:
             if debug_on:
                 print(f"skipping: join over sub query {join.this.sql()}")
             continue
