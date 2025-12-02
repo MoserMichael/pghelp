@@ -46,7 +46,7 @@ def ref_fields_from_joined_table(joined_table, join_condition):
     ret = []
     for str_col in ref_column_names:    
         if str_col.startswith(join_alias):
-            ret.append(str_col[ len(join_alias)+1 : ])
+            ret.append(str_col[ len(join_alias)+1 : ].lower())
     
 
     return JoinClause(table_name = table_name, joined_columns=ret)
@@ -133,7 +133,8 @@ def find_matching_index(index_infos, joined_columns, error_messages):
 
     # check if joined columns occur in any of the indexes.
     for index_info in index_infos:
-        if index_info['indexed_columns_set'].issubset(joined_column_set):
+        #print("-> check is {joined_column_set} in {index_info['indexed_columns_set'])}")
+        if joined_column_set.issubset(index_info['indexed_columns_set']):
             return True, index_info['index_definition_sql']
         
     return False, ""
