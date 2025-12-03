@@ -107,8 +107,8 @@ LEFT JOIN (
         pg_catalog.pg_constraint
 ) pk_info ON pk_info.conrelid = c.oid AND a.attnum = ANY(pk_info.conkey)
 WHERE
-    n.nspname = '{schema_name}' -- Replace with your schema name (e.g., 'public')
-    AND c.relname = '{tbl_name}' -- Replace with your table name
+    n.nspname = '{schema_name.lower()}' -- Replace with your schema name (e.g., 'public')
+    AND c.relname = '{tbl_name.lower()}' -- Replace with your table name
     AND a.attnum > 0
     AND NOT a.attisdropped
 ORDER BY

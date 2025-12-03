@@ -53,12 +53,12 @@ def count_table(conn, schema_and_table, fast_version, verbose):
     if not fast_version:
         query = f"""
 SELECT count(*) AS row_count
-FROM {schema_and_table}
+FROM {schema_and_table.lower()}
 """    
     else:
         pos = schema_and_table.find(".")
-        schema = schema_and_table[0:pos]
-        table = schema_and_table[(pos+1):]
+        schema = schema_and_table[0:pos].lower()
+        table = schema_and_table[(pos+1):].lower()
 
         query = f"""
 SELECT c.reltuples AS row_count
@@ -97,7 +97,7 @@ def list_schema_tables(conn, schema_name):
     query = f"""
 SELECT tablename
 FROM pg_catalog.pg_tables
-WHERE schemaname = '{schema_name}';
+WHERE schemaname = '{schema_name.lower()}';
 """
                 
     try:
