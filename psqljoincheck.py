@@ -84,8 +84,8 @@ WHERE i.indrelid = '{tbl_name}'::regclass
 
 def get_table_indexes(conn, tbl_name):
     pos = tbl_name.find(".")
-    schema_name = tbl_name[0:pos]
-    table_n = tbl_name[(pos+1):]
+    schema_name = tbl_name[0:pos].lower()
+    table_n = tbl_name[(pos+1):].lower()
 
     sql_stm = f"""
 SELECT
