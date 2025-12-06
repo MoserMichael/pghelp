@@ -1,7 +1,7 @@
 
 # python scripts for working with Postgres
 
-This repository has some neat scripts  for working with the PostgreSQL db. Note that most of the scripts are accessing internal DB tables like pg_catalog and pg_info. Unfortunately these internal tables are subject to change, and may differ between DB versions. So if things stop working for you, please check what happened to the tables. (this stuff is working for me, unfortunately I don't have the resources to update this for each and every postgres version)
+This repository has some neat scripts for working with the PostgreSQL db. Note that most of the scripts are accessing internal DB tables like pg_catalog and pg_info. Unfortunately these internal tables are subject to change, and may differ between DB versions. So if things stop working for you, please check what happened to the tables. (this stuff is working for me, unfortunately I don't have the resources to update this for each and every postgres version).
 
 ## setup
 
@@ -33,7 +33,7 @@ conf=postgresql://<PG_USER>:<PG_PASSWD>>@<PG_HOSTNAME>:<PG_PORT>/<PG_DB>
 
 ## Check if all join clauses are backed by indexes
 
-One reeason why a SELECT statement can have bad performance: the SELECT statement has JOIN clauses, where the columns in the ON clause arenot backed by indexes. This utility checks, if this is the case.
+One reason why a SELECT statement can have bad performance: the SELECT statement has JOIN clauses, where the columns in the ON clause are not backed by indexes. This utility checks, if this is the case.
 
 This utility uses the very remarkable [sqlglot](https://sqlglot.com/sqlglot.html) library, for parsing of sql statements.
 
